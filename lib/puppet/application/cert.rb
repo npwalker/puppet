@@ -264,8 +264,9 @@ Copyright (c) 2011 Puppet Inc., LLC Licensed under the Apache 2.0 License
       hosts = command_line.args.collect { |h| h.downcase }
     end
     begin
-      if subcommand == :destroy and (@ca.waiting? & hosts).empty?
-        apply(@ca, :revoke, options.merge(:to => hosts))
+      if subcommand == :destroy
+        signed_hosts = hosts - @ca.waiting?
+        apply(@ca, :revoke, options.merge(:to => signed_hosts))
       end
       apply(@ca, subcommand, options.merge(:to => hosts, :digest => @digest))
     rescue => detail
