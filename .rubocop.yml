@@ -15,6 +15,7 @@ AllCops:
     - 'lib/puppet/parser/parser.rb'
     - 'lib/puppet/pops/parser/eparser.rb'
     - 'lib/semantic_puppet/dependency/module_release.rb'
+    - 'vendor/**/*'
 
 Lint/ConditionPosition:
   Enabled: true
