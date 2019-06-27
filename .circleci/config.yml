@@ -24,7 +24,16 @@ commands:
         type: string
         #default: "parallel_spec"
     steps:
+      - restore_cache:
+          keys:
+            - source-v1-{{ .Branch }}-{{ .Revision }}
+            - source-v1-{{ .Branch }}-
+            - source-v1-
       - checkout
+      - save_cache:
+          key: source-v1-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".git"
       - run: bundle -v
       - run: gem update --system && gem install bundler --no-document
       - run: gem --version
