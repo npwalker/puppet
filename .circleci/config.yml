@@ -33,7 +33,7 @@ commands:
           keys:
             - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ checksum "Gemfile" }}
             - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-
-      - run: bundle install --jobs $(nproc) --path vendor/bundle --retry 2 --without packaging documentation
+      - run: bundle install --jobs $(nproc) --path vendor/bundle --retry 2 --without packaging documentation --clean
       - save_cache:
           key: cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ checksum "Gemfile" }}
           paths:
