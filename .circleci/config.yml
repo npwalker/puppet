@@ -114,21 +114,17 @@ workflows:
       - rubocop
       - warnings
       - commits
-      - jruby_rspec:
-          requires:
-            - rubocop
-            - warnings
-            - commits
-      - jruby_spec:
-          requires:
-            - rubocop
-            - warnings
-            - commits
       - ruby25_spec:
           requires:
             - rubocop
             - warnings
             - commits
+      - jruby_rspec:
+          requires:
+            - ruby25_spec
+      - jruby_spec:
+          requires:
+            - ruby25_spec
       - ruby24_spec:
           requires:
             - rubocop
