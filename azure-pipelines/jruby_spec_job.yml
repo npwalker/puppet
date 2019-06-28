@@ -1,0 +1,24 @@
+parameters:
+  name: ''
+  spec_command: ''
+  container: ''
+  puppet_gem_version: ''
+
+jobs:
+- job: ${{ parameters.name }}
+  pool:
+    vmImage: 'ubuntu-16.04'
+  container: ${{ parameters.container }}
+  steps:
+  - script: |
+      bundle -v
+      gem update --system $RUBYGEMS_VERSION --no-document
+      #&& gem install bundler --no-document
+    displayName: 'gem update'
+  - script: |
+      gem --version
+      bundle -v
+      bundle install --jobs $(nproc) --path vendor/bundle --retry 2 --without packaging documentation
+    displayName: 'bundle install'
+  - script: bundle exec rake ${{ parameters.spec_command }}
+    displayName: 'bundle exec rake ${{ parameters.spec_command }}'
