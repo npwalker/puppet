@@ -40,4 +40,4 @@ stages:
     parameters:
       name: 'jruby9200_spec'
       container: jruby:9.2
-      spec_command: 'parallel:spec'
+      spec_command: 'parallel:spec[1]'

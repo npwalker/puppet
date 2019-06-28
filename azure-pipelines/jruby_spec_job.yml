@@ -3,6 +3,7 @@ parameters:
   spec_command: ''
   container: ''
   puppet_gem_version: ''
+  caching_vsts_feed: '03e74050-3038-4fa1-b756-76a47c479ab5'
 
 jobs:
 - job: ${{ parameters.name }}
@@ -10,11 +11,20 @@ jobs:
     vmImage: 'ubuntu-16.04'
   container: ${{ parameters.container }}
   steps:
+  - checkout: self  # self represents the repo where the initial Pipelines YAML file was found
+    fetchDepth: 10  # the depth of commits to ask Git to fetch
   - script: |
       bundle -v
       gem update --system $RUBYGEMS_VERSION --no-document
       #&& gem install bundler --no-document
     displayName: 'gem update'
+  - script: ruby -v | tee ruby_version.txt
+    displayName: 'save ruby_version file'
+  - task: 1ESLighthouseEng.PipelineArtifactCaching.RestoreAndSaveCacheV1.RestoreAndSaveCache@1
+    inputs:
+      keyfile: 'ruby_version.txt, Gemfile'
+      targetfolder: 'vendor/bundle'
+      vstsFeed: '${{ parameters.caching_vsts_feed }}'
   - script: |
       gem --version
       bundle -v
