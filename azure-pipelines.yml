@@ -1,0 +1,43 @@
+trigger:
+- master
+
+stages: 
+- stage: lint
+  jobs:
+  - template: azure-pipelines/spec_job.yml
+    parameters:
+      name: rubocop
+      ruby_version: '2.5'
+      spec_command: 'rubocop'
+  - template: azure-pipelines/spec_job.yml
+    parameters:
+      name: commits
+      ruby_version: '2.5'
+      spec_command: 'commits'
+  - template: azure-pipelines/spec_job.yml
+    parameters:
+      name: warnings
+      ruby_version: '2.5'
+      spec_command: 'warnings'
+- stage: spec
+  jobs:
+  - template: azure-pipelines/spec_job.yml
+    parameters:
+      name: 'ruby25_spec'
+      ruby_version: '2.5'
+      spec_command: 'parallel:spec'
+  - template: azure-pipelines/spec_job.yml
+    parameters:
+      name: 'ruby24_spec'
+      ruby_version: '2.4'
+      spec_command: 'parallel:spec'
+  - template: azure-pipelines/spec_job.yml
+    parameters:
+      name: 'ruby23_spec'
+      ruby_version: '2.3'
+      spec_command: 'parallel:spec'
+  - template: azure-pipelines/jruby_spec_job.yml
+    parameters:
+      name: 'jruby9200_spec'
+      container: jruby:9.2
+      spec_command: 'parallel:spec[1]'

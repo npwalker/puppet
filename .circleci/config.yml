@@ -1,0 +1,146 @@
+version: 2.1
+
+executors:
+  ruby:
+    parameters:
+      ruby_version:
+        type: string
+        default: "2.5"
+    docker:
+      - image: circleci/ruby:<< parameters.ruby_version >>
+  jruby:
+    parameters:
+      jruby_version:
+        type: string
+        default: "9.2.0.0"
+    docker:
+      - image: circleci/jruby:<< parameters.jruby_version >>
+
+commands:
+  runspecs:
+    description: "A command for running rake spec"
+    parameters:
+      spec_command:
+        type: string
+        #default: "parallel_spec"
+    steps:
+      - restore_cache:
+          keys:
+            - source-v1-{{ .Branch }}-{{ .Revision }}
+            - source-v1-{{ .Branch }}-
+            - source-v1-
+      - checkout
+      - save_cache:
+          key: source-v1-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ".git"
+      - run: bundle -v
+      - run: gem update --system && gem install bundler --no-document
+      - run: gem --version
+      - run: bundle -v
+      - run: echo $(ruby -v)
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Gemfile" }}-{{ .Environment.CIRCLE_PR_NUMBER }}
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Gemfile" }}-
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_JOB }}
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-
+      - run: bundle install --jobs $(nproc) --path vendor/bundle --retry 2 --without packaging documentation
+      - run: bundle clean --force
+      - save_cache:
+          key: cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_JOB }}-{{ checksum "Gemfile" }}-{{ .Environment.CIRCLE_PR_NUMBER }}
+          paths:
+            - vendor/bundle
+      - run: bundle exec rake << parameters.spec_command >>
+
+jobs:
+  rubocop:
+    executor:
+      name: ruby
+      ruby_version: "2.5"
+    steps:
+      - runspecs:
+          spec_command: "rubocop"
+  warnings:
+    executor:
+      name: ruby
+      ruby_version: "2.5"
+    steps:
+      - runspecs:
+          spec_command: "warnings"
+  commits:
+    executor:
+      name: ruby
+      ruby_version: "2.5"
+    steps:
+      - runspecs:
+          spec_command: "commits"
+  ruby25_spec:
+    executor:
+      name: ruby
+    steps:
+      - runspecs:
+          spec_command: "parallel:spec[16]"
+  ruby24_spec:
+    executor:
+      name: ruby
+      ruby_version: "2.4"
+    steps:
+      - runspecs:
+          spec_command: "parallel:spec[16]"
+  ruby23_spec:
+    executor:
+      name: ruby
+      ruby_version: "2.3"
+    steps:
+      - runspecs:
+          spec_command: "parallel:spec[16]"
+#Running parallel_spec with a larger group size causes the JVM to load less times
+#However, running with a larger group size casuses presumably spurious errors that
+#don't show up under the default group size.
+  jruby_spec:
+    executor:
+      name: jruby
+      jruby_version: "9.2.0.0"
+    steps:
+      - runspecs:
+          spec_command: "parallel:spec[1,3000]"
+#running rake spec for jruby is faster because it only loads the JVM once and runs all specs
+#however rake spec has presumably spurious errors that don't show up under parallel:spec
+#This is included to show the performance increase by using it.
+  jruby_rspec:
+    executor:
+      name: jruby
+      jruby_version: "9.2.0.0"
+    steps:
+      - runspecs:
+          spec_command: "spec"
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - rubocop
+      - warnings
+      - commits
+      - ruby25_spec:
+          requires:
+            - rubocop
+            - warnings
+            - commits
+      - jruby_rspec:
+          requires:
+            - ruby25_spec
+      - jruby_spec:
+          requires:
+            - ruby25_spec
+      - ruby24_spec:
+          requires:
+            - rubocop
+            - warnings
+            - commits
+      - ruby23_spec:
+          requires:
+            - rubocop
+            - warnings
+            - commits
